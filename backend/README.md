@@ -1,16 +1,14 @@
 # Inventory Service
 
-## Requirements
-- Java 21
-- Maven
-- SQL Server
-
-## Setup
-1. Create DB MiniInventory
-2. Update application.properties
-3. Run:
-
+Run:
 mvn spring-boot:run
 
-## Test
-http://localhost:8080/inventory/test
+Base URL:
+http://localhost:8080/api/inventory
+
+APIs:
+POST /add
+GET /available?sku=&mrp=
+PUT /update
+GET /all
+GET /summary
