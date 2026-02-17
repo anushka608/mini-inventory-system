@@ -5,7 +5,7 @@ Spring Boot Inventory Microservice
 ## Run
 
 ```
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ## Base URL
@@ -25,4 +25,4 @@ GET /summary
 ## Tech
 Spring Boot  
 JPA  
-MySQL  
+MSSQL  
