@@ -1,0 +1,56 @@
+<div class="container">
+
+  <h2 style="margin-bottom:20px;font-size:26px;font-weight:600">
+    Inventory
+  </h2>
+
+  <div class="card">
+
+    <div *ngIf="loading">Loading inventory...</div>
+
+    <table *ngIf="!loading" class="table">
+
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Batch</th>
+          <th>Qty</th>
+          <th>MRP</th>
+          <th>Status</th>
+          <th>Expiry</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let i of inventory">
+
+          <td>{{i.sku}}</td>
+          <td>{{i.batchNo}}</td>
+
+          <td [class.qty-zero]="i.quantity===0">
+            {{i.quantity}}
+          </td>
+
+          <td>{{i.mrp}}</td>
+
+          <td>
+            <span class="badge"
+              [ngClass]="{
+                good:i.status==='GOOD',
+                damaged:i.status==='DAMAGED',
+                expired:i.status==='EXPIRED'
+              }">
+              {{i.status}}
+            </span>
+          </td>
+
+          <td>{{i.expiryDate}}</td>
+
+        </tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>

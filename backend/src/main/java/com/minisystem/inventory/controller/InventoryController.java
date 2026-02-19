@@ -45,3 +45,4 @@ public class InventoryController {
         return service.getSummary();
     }
 }
+

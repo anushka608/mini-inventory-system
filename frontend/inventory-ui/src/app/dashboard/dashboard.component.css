@@ -1,0 +1,38 @@
+.page{
+  padding:40px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+h1{
+  margin-bottom:20px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  border-radius:8px;
+  overflow:hidden;
+}
+
+th{
+  background:#f5f6fa;
+  text-align:left;
+  padding:14px;
+  font-size:13px;
+}
+
+td{
+  padding:14px;
+  border-top:1px solid #eee;
+}
+
+.low{
+  color:red;
+  font-weight:bold;
+}
+
+.loading{
+  padding:30px;
+  font-size:18px;
+}

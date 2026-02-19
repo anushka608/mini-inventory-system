@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class InventoryService {
 
     private final InventoryRepository repo;
+    private final InventoryEventPublisher publisher;
 
     // ADD OR UPDATE STOCK
     @Transactional
@@ -40,7 +41,9 @@ public class InventoryService {
                     .build();
         }
 
-        return repo.save(inv);
+        Inventory saved = repo.save(inv);
+        publisher.publishUpdate(saved);
+        return saved;
     }
 
     // GET AVAILABLE STOCK
@@ -56,9 +59,7 @@ public class InventoryService {
         for(BatchUpdate b : req.getBatches()){
 
             Inventory inv = repo.findBySkuAndMrpAndBatchNo(
-                    req.getSku(),
-                    b.getMrp(),
-                    b.getBatchNo()
+                    req.getSku(), req.getMrp(), b.getBatchNo()
             ).orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
 
             if(inv.getQuantity() < b.getQuantity()){
@@ -66,6 +67,10 @@ public class InventoryService {
             }
 
             inv.setQuantity(inv.getQuantity() - b.getQuantity());
+
+            Inventory saved = repo.save(inv);
+
+            publisher.publishUpdate(saved);
         }
     }
 
