@@ -12,6 +12,7 @@ public interface InventoryService {
     List<InventoryDto> getAvailable(String sku, Double mrp);
 
     Map<String, List<InventoryDto>> getAvailableBulk(List<InventoryQuery> queries);
+
     List<InventorySummary> getSummary();
 
     SaveInventoryResponse save(SaveInventoryRequest req);

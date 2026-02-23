@@ -39,6 +39,11 @@ public class InventoryController {
 //        );
 //    }
 
+    /*
+     * BULK AVAILABLE INVENTORY
+     * POST /api/inventory/available
+     * Accepts list of queries and returns matching inventory grouped in a map
+     */
     @PostMapping("/available")
     public ResponseEntity<ApiResponse<Map<String,List<InventoryDto>>>> bulkAvailable(
             @Valid @RequestBody List<InventoryQuery> queries){
@@ -58,6 +63,11 @@ public class InventoryController {
 //        return ResponseEntity.ok("Stock updated");
 //    }
 
+    /*
+     * GET ALL INVENTORY
+     * GET /api/inventory/all
+     * Returns list of all inventory records
+     */
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<InventoryDto>>> all(){
 
@@ -86,6 +96,17 @@ public class InventoryController {
         );
     }
 
+    /*
+     * SAVE INVENTORY OPERATION
+     * POST /api/inventory/save
+     *
+     * Used for:
+     *  - Adding stock (operation = ADD)
+     *  - Deducting stock (operation = DEDUCT)
+     *
+     * Request body -> SaveInventoryRequest
+     * Response -> SaveInventoryResponse
+     */
     @PostMapping("/save")
     public ResponseEntity<ApiResponse<SaveInventoryResponse>> save(
             @Valid @RequestBody SaveInventoryRequest req){
@@ -95,6 +116,7 @@ public class InventoryController {
         return ResponseEntity.ok(
                 ApiResponse.<SaveInventoryResponse>builder()
                         .success(true)
+                        // Dynamic message based on operation type
                         .message(
                                 "ADD".equalsIgnoreCase(req.getOperation()) ? "Stock Added Successfully" : "Stock Deducted Successfully"
                         )

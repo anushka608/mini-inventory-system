@@ -64,7 +64,8 @@ public class InventoryServiceImpl implements InventoryService {
 
         return queries.stream().collect(Collectors.toMap(
                 q -> q.getSku() + "||" + q.getMrp(),
-                q -> getAvailable(q.getSku(), q.getMrp())
+                q -> getAvailable(q.getSku(), q.getMrp()),
+                (existing, ignored) -> existing
         ));
     }
 
