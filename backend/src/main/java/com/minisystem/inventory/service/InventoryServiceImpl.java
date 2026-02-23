@@ -10,7 +10,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -49,23 +48,31 @@ public class InventoryServiceImpl implements InventoryService {
 //        return saved;
 //    }
 
-    // GET AVAILABLE STOCK
+    // GET AVAILABLE STOCK (single SKU + MRP)
     @Override
     public List<InventoryDto> getAvailable(String sku, Double mrp) {
 
-        return repo.findBySkuIgnoreCaseAndMrpAndStatusAndExpiryDateGreaterThanEqual(
-                        sku, mrp, InventoryStatus.GOOD, LocalDate.now())
+        // Fetch inventory:
+        //  - matching sku
+        //  - matching mrp
+        //  - status GOOD only
+        return repo.findBySkuIgnoreCaseAndMrpAndStatus(
+                        sku, mrp, InventoryStatus.GOOD)
                 .stream()
-                .map(this::mapToDto)
+                .map(this::mapToDto) // convert Entity -> DTO
                 .toList();
     }
 
+    // BULK AVAILABLE STOCK
     public Map<String, List<InventoryDto>> getAvailableBulk(List<InventoryQuery> queries) {
 
+        // Convert list of queries into map:
+        // key = sku||mrp
+        // value = available inventory list
         return queries.stream().collect(Collectors.toMap(
                 q -> q.getSku() + "||" + q.getMrp(),
                 q -> getAvailable(q.getSku(), q.getMrp()),
-                (existing, ignored) -> existing
+                (existing, ignored) -> existing  // handle duplicate keys safely
         ));
     }
 
@@ -91,16 +98,20 @@ public class InventoryServiceImpl implements InventoryService {
 //        }
 //    }
 
+    // GET ALL INVENTORY
     public List<InventoryDto> getAll() {
 
+        // Fetch everything and convert to DTO
         return repo.findAll()
                 .stream()
                 .map(this::mapToDto)
                 .toList();
     }
 
+    // ENTITY → DTO MAPPER
     private InventoryDto mapToDto(Inventory inv) {
 
+        // Converts DB entity into response-safe DTO
         return InventoryDto.builder()
                 .sku(inv.getSku())
                 .mrp(inv.getMrp())
@@ -138,15 +149,19 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
 
+
+    // MAIN SAVE METHOD (ADD or DEDUCT STOCK)
     @Override
-    @Transactional
+    @Transactional   // ensures DB consistency (all succeed or rollback)
     public SaveInventoryResponse save(SaveInventoryRequest req) {
 
+        // Validation: must contain batch items
         if (req.getItems() == null || req.getItems().isEmpty())
             throw new IllegalArgumentException("Batches required");
 
         List<BatchResult> results = new ArrayList<>();
 
+        // Decide operation
         switch (req.getOperation().toUpperCase()) {
 
             // ADD STOCK  (INBOUND)
@@ -154,6 +169,7 @@ public class InventoryServiceImpl implements InventoryService {
 
                 for (BatchUpdate b : req.getItems()) {
 
+                    // Try to find existing batch
                     Inventory inv = repo
                             .findBySkuIgnoreCaseAndMrpAndBatchNoIgnoreCase(
                                     b.getSku(),
@@ -162,8 +178,11 @@ public class InventoryServiceImpl implements InventoryService {
                             )
                             .orElse(null);
 
+                    // Previous quantity
                     int previous = inv != null ? inv.getQuantity() : 0;
 
+
+                    // If batch does not exist → create new record
                     if (inv == null) {
 
                         inv = Inventory.builder()
@@ -177,17 +196,21 @@ public class InventoryServiceImpl implements InventoryService {
 
                     } else {
 
+                        // If exists → increase quantity
                         inv.setQuantity(inv.getQuantity() + b.getQuantity());
 
+                        // Update status if provided
                         if (b.getStatus() != null)
                             inv.setStatus(InventoryStatus.valueOf(String.valueOf(b.getStatus())));
 
+                        // Update expiry if provided
                         if (b.getExpiryDate() != null)
                             inv.setExpiryDate(b.getExpiryDate());
                     }
 
                     repo.save(inv);
 
+                    // Store result for response
                     results.add(
                             BatchResult.builder()
                                     .batchNo(inv.getBatchNo())
@@ -208,6 +231,7 @@ public class InventoryServiceImpl implements InventoryService {
 
                 for (BatchUpdate b : req.getItems()) {
 
+                    // Must exist
                     Inventory inv = repo
                             .findBySkuIgnoreCaseAndMrpAndBatchNoIgnoreCase(
                                     b.getSku(),
@@ -224,6 +248,7 @@ public class InventoryServiceImpl implements InventoryService {
                     int previous = inv.getQuantity();
                     int deduct = b.getQuantity();
 
+                    // Check stock availability
                     if (previous < deduct)
                         throw new InsufficientStockException(
                                 "Insufficient qty for "
@@ -232,6 +257,7 @@ public class InventoryServiceImpl implements InventoryService {
 
                     int newQty = previous - deduct;
 
+                    // If quantity becomes zero → remove batch
                     if (newQty <= 0) {
 
                         repo.delete(inv);
@@ -247,6 +273,7 @@ public class InventoryServiceImpl implements InventoryService {
 
                     } else {
 
+                        // Otherwise update quantity
                         inv.setQuantity(newQty);
                         repo.save(inv);
 

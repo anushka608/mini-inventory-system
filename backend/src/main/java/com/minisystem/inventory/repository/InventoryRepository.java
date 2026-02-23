@@ -18,7 +18,7 @@ public interface InventoryRepository extends JpaRepository<Inventory,Long> {
 //    List<Inventory> findBySkuIgnoreCaseAndMrpAndStatusAndExpiryDateAfter(
 //            String sku, Double mrp, InventoryStatus status, LocalDate date);
 
-    List<Inventory>findBySkuIgnoreCaseAndMrpAndStatusAndExpiryDateGreaterThanEqual(String sku, Double mrp, InventoryStatus inventoryStatus, LocalDate now);
+    List<Inventory>findBySkuIgnoreCaseAndMrpAndStatus(String sku, Double mrp, InventoryStatus inventoryStatus);
 
 //    List<Inventory> findBySku(String sku);
 //
