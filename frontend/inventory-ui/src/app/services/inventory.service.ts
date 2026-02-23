@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 export interface Inventory {
-  id: number;
   sku: string;
   mrp: number;
   batchNo: string;
@@ -19,18 +18,26 @@ export interface InventorySummary {
   expiredQty: number;
 }
 
+/* matches backend ApiResponse<T> wrapper */
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 @Injectable({ providedIn: 'root' })
 export class InventoryService {
 
-  private api1 = 'http://localhost:8080/api/inventory/all';
-  private api2 = 'http://localhost:8080/api/inventory/summary';
+  constructor(private http: HttpClient) { }
 
-  constructor(private http: HttpClient) {}
+  /* unwrap response.data */
+  private base = 'http://localhost:8080/api/inventory';
 
-  getAll(): Observable<Inventory[]> {
-    return this.http.get<Inventory[]>(this.api1);
+  getAll() {
+    return this.http.get<Inventory[]>(`${this.base}/all`);
   }
+
   getSummary() {
-  return this.http.get<InventorySummary[]>(this.api2);
-}
+    return this.http.get<InventorySummary[]>(`${this.base}/summary`);
+  }
 }

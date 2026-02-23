@@ -34,33 +34,48 @@ export class DashboardComponent implements OnInit {
     private cd: ChangeDetectorRef
   ) { }
 
-  ngOnInit() {
-    this.service.getAll().subscribe({
-      next: data => {
-        this.inventory = data || [];
-        this.filteredInventory = data ?? [];
-        this.applySort();
-        this.loading = false;
-        this.cd.detectChanges();
-      },
-      error: err => {
-        console.error(err);
-        this.loading = false;
-        this.cd.detectChanges();
-      }
-    });
+ngOnInit() {
 
-    this.service.getSummary().subscribe({
-      next: data => {
-        this.summary = data || [];
-        this.totalGood = this.summary.reduce((a, b) => a + (b.goodQty || 0), 0);
-        this.totalDamaged = this.summary.reduce((a, b) => a + (b.damagedQty || 0), 0);
-        this.totalExpired = this.summary.reduce((a, b) => a + (b.expiredQty || 0), 0);
-        this.cd.detectChanges();
-      },
-      error: err => console.error(err)
-    });
-  }
+  /* getAllreturns real array */
+  this.service.getAll().subscribe({
+    next: data => {
+
+      console.log("Inventory from backend:", data); //  debug
+
+      this.inventory = data || [];
+      this.filteredInventory = [...this.inventory];
+
+      this.applySort();
+
+      this.loading = false;
+      this.cd.detectChanges();
+    },
+    error: err => {
+      console.error("Inventory API error:", err);
+      this.loading = false;
+      this.cd.detectChanges();
+    }
+  });
+
+
+  /* summary unwrapped */
+  this.service.getSummary().subscribe({
+    next: data => {
+
+      console.log("Summary from backend:", data); // debug
+
+      this.summary = data || [];
+
+      /* totals calculation */
+      this.totalGood = this.summary.reduce((a, b) => a + (b.goodQty || 0), 0);
+      this.totalDamaged = this.summary.reduce((a, b) => a + (b.damagedQty || 0), 0);
+      this.totalExpired = this.summary.reduce((a, b) => a + (b.expiredQty || 0), 0);
+
+      this.cd.detectChanges();
+    },
+    error: err => console.error("Summary API error:", err)
+  });
+}
 
   applyFilter() {
 
