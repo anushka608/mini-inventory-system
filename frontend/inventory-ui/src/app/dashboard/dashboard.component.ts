@@ -1,8 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { InventoryService, Inventory } from '../services/inventory.service';
+import { InventoryService, Inventory, InventorySummary } from '../services/inventory.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { InventorySummary } from '../services/inventory.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,68 +14,64 @@ import { InventorySummary } from '../services/inventory.service';
 export class DashboardComponent implements OnInit {
 
   summary: InventorySummary[] = [];
+  inventory: Inventory[] = [];
+  filteredInventory: Inventory[] = [];
+
   today: Date = new Date();
 
   totalGood = 0;
   totalDamaged = 0;
   totalExpired = 0;
-  selectedStatus: string = 'ALL';
-  // statusFilter: string = 'ALL';
-  searchText: string = '';
-  filteredInventory: any[] = [];
-  inventory: Inventory[] = [];
+
+  selectedStatus = 'ALL';
+  searchText = '';
+
   loading = true;
 
-  sortColumn: string | null = null;
+  sortColumn: keyof Inventory | null = null;
   sortAsc = true;
 
   constructor(
-    private service: InventoryService,
-    private cd: ChangeDetectorRef
-  ) { }
+  private service: InventoryService,
+  private cd: ChangeDetectorRef
+) {}
 
-ngOnInit() {
+  ngOnInit() {
 
-  /* getAllreturns real array */
-  this.service.getAll().subscribe({
-    next: data => {
+    forkJoin({
+      inventory: this.service.getAll(),
+      summary: this.service.getSummary()
+    }).subscribe({
 
-      console.log("Inventory from backend:", data); //  debug
+      next: ({ inventory, summary }) => {
 
-      this.inventory = data || [];
-      this.filteredInventory = [...this.inventory];
+        this.inventory = inventory ?? [];
+        this.summary = summary ?? [];
 
-      this.applySort();
+        this.filteredInventory = [...this.inventory];
 
-      this.loading = false;
-      this.cd.detectChanges();
-    },
-    error: err => {
-      console.error("Inventory API error:", err);
-      this.loading = false;
-      this.cd.detectChanges();
-    }
-  });
+        this.totalGood =
+          this.summary.reduce((a,b)=>a+(b.goodQty||0),0);
 
+        this.totalDamaged =
+          this.summary.reduce((a,b)=>a+(b.damagedQty||0),0);
 
-  /* summary unwrapped */
-  this.service.getSummary().subscribe({
-    next: data => {
+        this.totalExpired =
+          this.summary.reduce((a,b)=>a+(b.expiredQty||0),0);
 
-      console.log("Summary from backend:", data); // debug
+        this.loading = false;
+        this.cd.detectChanges();
+      },
 
-      this.summary = data || [];
+      error: err => {
+        console.error(err);
+        this.loading = false;
+        
+      }
 
-      /* totals calculation */
-      this.totalGood = this.summary.reduce((a, b) => a + (b.goodQty || 0), 0);
-      this.totalDamaged = this.summary.reduce((a, b) => a + (b.damagedQty || 0), 0);
-      this.totalExpired = this.summary.reduce((a, b) => a + (b.expiredQty || 0), 0);
+    });
 
-      this.cd.detectChanges();
-    },
-    error: err => console.error("Summary API error:", err)
-  });
-}
+  }
 
   applyFilter() {
 
@@ -87,76 +83,64 @@ ngOnInit() {
         item.sku?.toLowerCase().includes(text) ||
         item.batchNo?.toLowerCase().includes(text);
 
-      // 👇 IMPORTANT CHANGE
-      const displayStatus = this.getDisplayStatus(item);
-
       const matchesStatus =
-        !this.selectedStatus ||
         this.selectedStatus === 'ALL' ||
-        displayStatus === this.selectedStatus;
+        item.status === this.selectedStatus;
 
       return matchesSearch && matchesStatus;
     });
+
     this.applySort();
   }
 
-  sortBy(column: string): void {
+  sortBy(column: keyof Inventory) {
+
     if (this.sortColumn === column) {
       this.sortAsc = !this.sortAsc;
     } else {
       this.sortColumn = column;
       this.sortAsc = true;
     }
+
     this.applySort();
-    this.cd.detectChanges();
   }
 
-  getSortIcon(column: string): string {
+  getSortIcon(column: keyof Inventory) {
+
     if (this.sortColumn !== column) return '↕';
     return this.sortAsc ? '↑' : '↓';
   }
 
-  private applySort(): void {
+  private applySort() {
+
     if (!this.sortColumn) return;
+
     const key = this.sortColumn;
     const asc = this.sortAsc;
-    this.filteredInventory = [...this.filteredInventory].sort((a, b) => {
-      let va: string | number | null = a[key];
-      let vb: string | number | null = b[key];
-      if (key === 'status') {
-        va = this.getDisplayStatus(a);
-        vb = this.getDisplayStatus(b);
+
+    this.filteredInventory = [...this.filteredInventory].sort((a,b)=>{
+
+      const va = a[key] as any;
+      const vb = b[key] as any;
+
+      if (key === 'expiryDate') {
+        return asc
+          ? new Date(va).getTime()-new Date(vb).getTime()
+          : new Date(vb).getTime()-new Date(va).getTime();
       }
-      if (va == null && vb == null) return 0;
-      if (va == null) return asc ? 1 : -1;
-      if (vb == null) return asc ? -1 : 1;
+
       if (typeof va === 'number' && typeof vb === 'number') {
-        return asc ? va - vb : vb - va;
+        return asc ? va-vb : vb-va;
       }
-      if (key === 'expiryDate' && typeof va === 'string' && typeof vb === 'string') {
-        const d = asc ? 1 : -1;
-        return d * (new Date(va).getTime() - new Date(vb).getTime());
-      }
-      const sa = String(va).toLowerCase();
-      const sb = String(vb).toLowerCase();
-      if (sa < sb) return asc ? -1 : 1;
-      if (sa > sb) return asc ? 1 : -1;
-      return 0;
+
+      return asc
+        ? String(va).localeCompare(String(vb))
+        : String(vb).localeCompare(String(va));
+
     });
   }
 
-  getDisplayStatus(item: Inventory): string {
-
-    if (item.expiryDate) {
-      const expiry = new Date(item.expiryDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (expiry < today) {
-        return 'EXPIRED';
-      }
-    }
-
-    return item.status;
+  trackByBatch(index:number,item:Inventory){
+    return item.sku+item.batchNo+item.mrp;
   }
 }

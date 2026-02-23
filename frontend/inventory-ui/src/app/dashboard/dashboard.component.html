@@ -60,11 +60,9 @@
       </div>
     </div>
 
-    <div *ngIf="loading" class="loading-state">
-      Loading inventory...
-    </div>
+    <div *ngIf="loading" class="spinner"></div>
 
-    <table *ngIf="!loading && filteredInventory.length" class="table">
+    <table *ngIf="!loading && filteredInventory.length>0" class="table">
       <thead>
         <tr>
           <th class="sortable" (click)="sortBy('sku')">
@@ -89,7 +87,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let i of filteredInventory">
+        <tr *ngFor="let i of filteredInventory; trackBy: trackByBatch">
           <td>{{ i.sku }}</td>
           <td>{{ i.batchNo }}</td>
 
@@ -97,27 +95,27 @@
             {{ i.quantity }}
           </td>
 
-          <td>{{ i.mrp }}</td>
+          <td>{{  i.mrp | currency:'INR':'symbol':'1.0-0'  }}</td>
 
           <td>
             <span
               class="badge"
               [ngClass]="{
-                good: getDisplayStatus(i) === 'GOOD',
-                damaged: getDisplayStatus(i) === 'DAMAGED',
-                expired: getDisplayStatus(i) === 'EXPIRED'
+                good: i.status === 'GOOD',
+                damaged: i.status === 'DAMAGED',
+                expired: i.status === 'EXPIRED'
               }"
             >
-              {{ getDisplayStatus(i) }}
+              {{ i.status }}
             </span>
           </td>
 
-          <td>{{ i.expiryDate }}</td>
+          <td>{{ i.expiryDate | date:'dd MMM yyyy' }}</td>
         </tr>
       </tbody>
     </table>
 
-    <div *ngIf="!loading && !filteredInventory.length" class="empty-state">
+    <div *ngIf="!loading && filteredInventory.length == 0" class="empty-state">
       <div class="empty-title">No items match your filters</div>
       <div class="empty-subtitle">
         Try clearing the search or selecting a different status.

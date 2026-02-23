@@ -1,4 +1,4 @@
-/* ===== GLOBAL WAREHOUSE THEME ===== */
+/*GLOBAL WAREHOUSE THEME*/
 
 body{
   margin:0;
@@ -130,7 +130,7 @@ body{
   font-size:14px;
 }
 
-/* ===== INVENTORY DASHBOARD PAGE ===== */
+/*INVENTORY DASHBOARD PAGE*/
 .inventory-page{
   background:#f6f8fb;
   padding:28px 32px 32px;
