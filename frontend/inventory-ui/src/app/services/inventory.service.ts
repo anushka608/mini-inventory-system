@@ -12,14 +12,25 @@ export interface Inventory {
   expiryDate: string;
 }
 
+export interface InventorySummary {
+  sku: string;
+  goodQty: number;
+  damagedQty: number;
+  expiredQty: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class InventoryService {
 
-  private api = 'http://localhost:8080/api/inventory/all';
+  private api1 = 'http://localhost:8080/api/inventory/all';
+  private api2 = 'http://localhost:8080/api/inventory/summary';
 
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<Inventory[]> {
-    return this.http.get<Inventory[]>(this.api);
+    return this.http.get<Inventory[]>(this.api1);
   }
+  getSummary() {
+  return this.http.get<InventorySummary[]>(this.api2);
+}
 }

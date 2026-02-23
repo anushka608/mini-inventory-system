@@ -1,56 +1,127 @@
-<div class="container">
+<div class="inventory-page">
+  <div class="header-row">
+    <div>
+      <div class="subtitle">Overview</div>
+      <h2 class="title">Inventory Operations</h2>
+    </div>
 
-  <h2 style="margin-bottom:20px;font-size:26px;font-weight:600">
-    Inventory
-  </h2>
+    <div class="date-pill">
+      <div class="date-text">
+        <span class="date-label">Today</span>
+        <span class="date-value">{{ today | date: 'EEEE, d MMMM y' }}</span>
+      </div>
+    </div>
+  </div>
 
-  <div class="card">
+  <div class="summary-container">
+    <div class="summary summary-good">
+      <h2>{{ totalGood | number }}</h2>
+      <p>Good Stock</p>
+    </div>
 
-    <div *ngIf="loading">Loading inventory...</div>
+    <div class="summary summary-damaged">
+      <h2>{{ totalDamaged | number }}</h2>
+      <p>Damaged Stock</p>
+    </div>
 
-    <table *ngIf="!loading" class="table">
+    <div class="summary summary-expired">
+      <h2>{{ totalExpired | number }}</h2>
+      <p>Expired Stock</p>
+    </div>
+  </div>
 
+  <div class="table-card">
+    <div class="table-header-row">
+      <div>
+        <div class="table-title">Inventory</div>
+        <div class="table-subtitle">
+          All inventory items at a glance ·
+          <span class="table-count">{{ filteredInventory.length || 0 }} items</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Search SKU or Batch..."
+            [(ngModel)]="searchText"
+            (input)="applyFilter()"
+          />
+        </div>
+
+        <select [(ngModel)]="selectedStatus" (change)="applyFilter()">
+          <option value="ALL">All Status</option>
+          <option value="GOOD">Good</option>
+          <option value="DAMAGED">Damaged</option>
+          <option value="EXPIRED">Expired</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      Loading inventory...
+    </div>
+
+    <table *ngIf="!loading && filteredInventory.length" class="table">
       <thead>
         <tr>
-          <th>SKU</th>
-          <th>Batch</th>
-          <th>Qty</th>
-          <th>MRP</th>
-          <th>Status</th>
-          <th>Expiry</th>
+          <th class="sortable" (click)="sortBy('sku')">
+            SKU <span class="sort-icon">{{ getSortIcon('sku') }}</span>
+          </th>
+          <th class="sortable" (click)="sortBy('batchNo')">
+            Batch <span class="sort-icon">{{ getSortIcon('batchNo') }}</span>
+          </th>
+          <th class="sortable" (click)="sortBy('quantity')">
+            Qty <span class="sort-icon">{{ getSortIcon('quantity') }}</span>
+          </th>
+          <th class="sortable" (click)="sortBy('mrp')">
+            MRP <span class="sort-icon">{{ getSortIcon('mrp') }}</span>
+          </th>
+          <th class="sortable" (click)="sortBy('status')">
+            Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+          </th>
+          <th class="sortable" (click)="sortBy('expiryDate')">
+            Expiry <span class="sort-icon">{{ getSortIcon('expiryDate') }}</span>
+          </th>
         </tr>
       </thead>
 
       <tbody>
-        <tr *ngFor="let i of inventory">
+        <tr *ngFor="let i of filteredInventory">
+          <td>{{ i.sku }}</td>
+          <td>{{ i.batchNo }}</td>
 
-          <td>{{i.sku}}</td>
-          <td>{{i.batchNo}}</td>
-
-          <td [class.qty-zero]="i.quantity===0">
-            {{i.quantity}}
+          <td [class.qty-zero]="i.quantity === 0">
+            {{ i.quantity }}
           </td>
 
-          <td>{{i.mrp}}</td>
+          <td>{{ i.mrp }}</td>
 
           <td>
-            <span class="badge"
+            <span
+              class="badge"
               [ngClass]="{
-                good:i.status==='GOOD',
-                damaged:i.status==='DAMAGED',
-                expired:i.status==='EXPIRED'
-              }">
-              {{i.status}}
+                good: getDisplayStatus(i) === 'GOOD',
+                damaged: getDisplayStatus(i) === 'DAMAGED',
+                expired: getDisplayStatus(i) === 'EXPIRED'
+              }"
+            >
+              {{ getDisplayStatus(i) }}
             </span>
           </td>
 
-          <td>{{i.expiryDate}}</td>
-
+          <td>{{ i.expiryDate }}</td>
         </tr>
       </tbody>
-
     </table>
 
+    <div *ngIf="!loading && !filteredInventory.length" class="empty-state">
+      <div class="empty-title">No items match your filters</div>
+      <div class="empty-subtitle">
+        Try clearing the search or selecting a different status.
+      </div>
+    </div>
   </div>
-
 </div>

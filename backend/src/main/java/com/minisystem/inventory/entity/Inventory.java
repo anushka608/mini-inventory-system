@@ -1,4 +1,5 @@
 package com.minisystem.inventory.entity;
+import com.minisystem.inventory.enums.InventoryStatus;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -32,7 +33,8 @@ public class Inventory {
     private Integer quantity;
 
     @Column(name="STATUS", nullable=false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private InventoryStatus status;
 
     @Column(name="EXPIRY_DATE")
     private LocalDate expiryDate;
